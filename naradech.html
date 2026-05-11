@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>นราเดช — ระบบจัดการงาน</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+* { box-sizing:border-box; }
+body { font-family:'Sarabun',sans-serif; background:linear-gradient(135deg,#f8faff 0%,#eef2fa 100%); min-height:100vh; }
+.glass { background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(20px); border-radius:24px; box-shadow:0 12px 40px rgba(92,103,255,0.10); }
+.glass-dark { background:linear-gradient(135deg,rgba(30,42,82,0.95),rgba(91,92,255,0.85)); border:1px solid rgba(255,255,255,0.15); border-radius:24px; color:white; }
+.btn-primary { background:linear-gradient(135deg,#4F5DFF,#7C6CFF); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:18px; padding:10px 20px; font-weight:600; cursor:pointer; box-shadow:0 8px 24px rgba(92,103,255,0.28); transition:opacity .2s; }
+.btn-primary:hover { opacity:.88; }
+.btn-secondary { background:rgba(255,255,255,0.65); color:#334155; border:1px solid rgba(255,255,255,0.7); border-radius:18px; padding:10px 20px; font-weight:600; cursor:pointer; backdrop-filter:blur(12px); transition:background .2s; }
+.btn-secondary:hover { background:rgba(255,255,255,.88); }
+.btn-danger { background:linear-gradient(135deg,#ef4444,#dc2626); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:18px; padding:10px 20px; font-weight:600; cursor:pointer; }
+.input-field { width:100%; border:1px solid rgba(255,255,255,0.7); background:rgba(255,255,255,0.65); border-radius:16px; padding:10px 16px; outline:none; font-size:14px; backdrop-filter:blur(12px); transition:border .2s; font-family:'Sarabun',sans-serif; }
+.input-field:focus { border-color:rgba(124,108,255,0.6); background:rgba(255,255,255,.88); }
+textarea.input-field { min-height:80px; resize:vertical; }
+.nav-btn { width:100%; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:16px; font-weight:600; font-size:14px; cursor:pointer; border:none; background:transparent; color:#64748b; transition:all .2s; text-align:left; }
+.nav-btn:hover { background:rgba(255,255,255,0.55); }
+.nav-btn.active { background:linear-gradient(135deg,#4F5DFF,#7C6CFF); color:white; box-shadow:0 8px 24px rgba(92,103,255,0.28); }
+.badge { display:inline-flex; align-items:center; border-radius:999px; padding:3px 10px; font-size:12px; font-weight:600; border:1px solid; }
+.badge-green { background:rgba(236,253,245,0.9); color:#065f46; border-color:rgba(167,243,208,0.7); }
+.badge-red { background:rgba(255,241,242,0.9); color:#be123c; border-color:rgba(252,165,165,0.7); }
+.badge-yellow { background:rgba(255,251,235,0.9); color:#92400e; border-color:rgba(252,211,77,0.7); }
+.badge-blue { background:rgba(239,246,255,0.9); color:#1e40af; border-color:rgba(147,197,253,0.7); }
+.badge-violet { background:rgba(245,243,255,0.9); color:#5b21b6; border-color:rgba(196,181,253,0.7); }
+.badge-gray { background:rgba(255,255,255,0.8); color:#475569; border-color:rgba(203,213,225,0.7); }
+.badge-orange { background:rgba(255,247,237,0.9); color:#c2410c; border-color:rgba(253,186,116,0.7); }
+.toast { position:fixed; top:16px; right:16px; z-index:99; max-width:360px; padding:14px 18px; border-radius:20px; background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(20px); box-shadow:0 12px 40px rgba(92,103,255,0.18); display:flex; align-items:center; gap:10px; font-weight:600; }
+.logo-text { font-size:26px; font-weight:900; letter-spacing:-1px; color:#1e293b; line-height:1; }
+.logo-sub { font-size:12px; color:#94a3b8; margin-top:2px; }
+.modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,0.5); backdrop-filter:blur(4px); z-index:60; display:flex; align-items:center; justify-content:center; padding:16px; }
+@media(max-width:1023px){ #sidebar{ display:none; } #main{ margin-left:0 !important; } }
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast" style="display:none">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F5DFF" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="toast-text"></span>
+</div>
+
+<div id="modal-overlay" class="modal-overlay" style="display:none"></div>
+
+<div id="login-page">
+  <div style="min-height:100vh;background:linear-gradient(135deg,rgba(124,108,255,0.12),rgba(79,93,255,0.08),#f8faff);display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div style="width:100%;max-width:400px;">
+      <div class="glass" style="padding:36px;">
+        <div style="text-align:center;margin-bottom:28px;">
+          <div style="font-size:42px;font-weight:900;color:#1e293b;letter-spacing:-2px;line-height:1;">นราเดช</div>
+          <div style="font-size:14px;color:#94a3b8;margin-top:4px;letter-spacing:2px;">เลี่ยมกรอบพระ</div>
+          <div style="width:48px;height:3px;background:linear-gradient(90deg,#4F5DFF,#7C6CFF);border-radius:99px;margin:12px auto 0;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <label>
+            <div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">Username</div>
+            <input id="login-user" class="input-field" placeholder="owner / chang1 / chang2" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"/>
+          </label>
+          <label>
+            <div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">Password</div>
+            <input id="login-pass" class="input-field" type="password" placeholder="••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+          </label>
+          <div id="login-err" style="display:none;color:#ef4444;font-size:13px;text-align:center;background:rgba(254,226,226,0.6);border-radius:12px;padding:8px;">Username หรือ Password ไม่ถูกต้อง</div>
+          <button class="btn-primary" style="width:100%;padding:14px;font-size:16px;margin-top:4px;" onclick="doLogin()">เข้าสู่ระบบ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="sidebar" style="position:fixed;top:0;left:0;bottom:0;width:260px;padding:12px;z-index:30;">
+    <div style="height:100%;background:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.7);border-radius:28px;padding:16px;display:flex;flex-direction:column;backdrop-filter:blur(24px);box-shadow:0 16px 60px rgba(92,103,255,0.12);">
+      <div style="background:linear-gradient(135deg,rgba(255,255,255,0.8),rgba(255,255,255,0.4));border-radius:20px;padding:16px;margin-bottom:16px;">
+        <div class="logo-text">นราเดช</div>
+        <div class="logo-sub">เลี่ยมกรอบพระ</div>
+      </div>
+      <nav id="nav-list" style="flex:1;display:flex;flex-direction:column;gap:2px;overflow-y:auto;"></nav>
+      <div style="border-top:1px solid rgba(255,255,255,0.6);padding-top:12px;margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="user-avatar" style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#4F5DFF,#7C6CFF);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;"></div>
+          <div style="flex:1;">
+            <div id="user-name" style="font-weight:700;font-size:14px;"></div>
+            <div id="user-role" style="font-size:12px;color:#94a3b8;"></div>
+          </div>
+          <button onclick="logout()" style="background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;" title="ออกจากระบบ">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main" style="margin-left:260px;min-height:100vh;display:flex;flex-direction:column;">
+    <header style="position:sticky;top:0;z-index:20;background:rgba(255,255,255,0.6);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.6);padding:16px 24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.2em;color:#94a3b8;text-transform:uppercase;">นราเดช เลี่ยมกรอบพระ</div>
+          <h1 id="page-title" style="font-size:22px;font-weight:800;color:#0f172a;margin-top:2px;"></h1>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.8);border-radius:16px;padding:8px 14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M21 21l-4.35-4.35M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z"/></svg>
+          <input id="search-input" oninput="onSearch(this.value)" placeholder="ค้นหางาน ลูกค้า เบอร์..." style="border:none;background:transparent;outline:none;font-size:13px;width:180px;font-family:'Sarabun',sans-serif;"/>
+        </div>
+      </div>
+    </header>
+    <div id="content" style="padding:20px 24px;max-width:1280px;flex:1;"></div>
+  </div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let state={
+  role:null,staffName:null,page:'jobs',searchQuery:'',
+  jobs:load('nrd_jobs',initJobs()),
+  withdrawals:load('nrd_wd',initWithdrawals()),
+  attendance:load('nrd_att',initAttendance()),
+  approvals:load('nrd_apv',[]),
+  selectedJobId:null,toastTimer:null,
+};
+
+// ─── Init Data ─────────────────────────────────────────────────────────────────
+function initJobs(){
+  const t=new Date().toISOString().slice(0,10);
+  const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const tm=new Date(Date.now()+86400000).toISOString().slice(0,10);
+  const nw=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
+  return [
+    {id:1,jobNo:'NRD-260511-001',customer:'คุณรุ่ง',phone:'0935260926',line:'rung_amulet',receiveDate:t,receiveTime:'10:00',deliveryDate:nw,deliveryTime:'15:00',types:['เลี่ยมกรอบใส'],pieces:1,price:800,paid:true,payMethod:'โอนเงิน',status:'กำลังทำ',details:'กรอบใสกันน้ำ',staff:'ช่าง 1',beforePhoto:true,afterPhoto:false,notes:''},
+    {id:2,jobNo:'NRD-260511-002',customer:'คุณบัง',phone:'0952252252',line:'',receiveDate:t,receiveTime:'13:00',deliveryDate:y,deliveryTime:'15:00',types:['ซ่อม'],pieces:2,price:300,paid:false,payMethod:'เงินสด',status:'รับงาน',details:'ซ่อมห่วง 2 ชิ้น',staff:'ช่าง 2',beforePhoto:true,afterPhoto:false,notes:''},
+    {id:3,jobNo:'NRD-260511-003',customer:'คุณปอ',phone:'0812345678',line:'por_line',receiveDate:t,receiveTime:'09:30',deliveryDate:tm,deliveryTime:'16:00',types:['ตั้งกรอบ'],pieces:3,price:1500,paid:false,payMethod:'โอนเงิน',status:'กำลังทำ',details:'กรอบเงิน',staff:'ช่าง 1',beforePhoto:true,afterPhoto:false,notes:''},
+    {id:4,jobNo:'NRD-260510-001',customer:'คุณอาร์ม',phone:'0891112233',line:'',receiveDate:y,receiveTime:'11:00',deliveryDate:nw,deliveryTime:'12:00',types:['ทำห่วง'],pieces:1,price:950,paid:true,payMethod:'QR Code',status:'เสร็จแล้ว',details:'ห่วงเงิน',staff:'ช่าง 2',beforePhoto:true,afterPhoto:true,notes:''},
+    {id:5,jobNo:'NRD-260509-001',customer:'คุณนัท',phone:'0867778899',line:'nat_line',receiveDate:new Date(Date.now()-2*86400000).toISOString().slice(0,10),receiveTime:'14:00',deliveryDate:y,deliveryTime:'18:00',types:['เลี่ยมกรอบใส','ตั้งกรอบ'],pieces:1,price:2500,paid:true,payMethod:'เงินสด',status:'รอข้อมูล',details:'กรอบพิเศษ',staff:'ช่าง 1',beforePhoto:true,afterPhoto:false,notes:'รอลูกค้าตอบ'},
+  ];
+}
+const stockCatalog=[
+  {id:'ac1',label:'อะคริลิค 1mm',unit:'แผ่น',price:25},
+  {id:'ac2',label:'อะคริลิค 2mm',unit:'แผ่น',price:50},
+  {id:'ac25',label:'อะคริลิค 2.5mm',unit:'แผ่น',price:60},
+  {id:'ac3',label:'อะคริลิค 3mm',unit:'แผ่น',price:70},
+  {id:'ac4',label:'อะคริลิค 4mm',unit:'แผ่น',price:90},
+  {id:'gas',label:'แก๊ส',unit:'กระป๋อง',price:60},
+  {id:'liq',label:'น้ำยาอะคริลิค',unit:'ขวด',price:200},
+  {id:'hook',label:'ห่วง',unit:'ชิ้น',price:50},
+  {id:'zip',label:'ถุงซิป',unit:'ใบ',price:5},
+  {id:'bag',label:'ถุงผ้า',unit:'ใบ',price:25},
+  {id:'other',label:'อื่นๆ',unit:'ชิ้น',price:0},
+];
+function initWithdrawals(){
+  return [{id:1,date:new Date().toISOString().slice(0,10),time:'10:15',refNo:'NRD-260511-001',refType:'job',staff:'ช่าง 1',item:'อะคริลิค 2.5mm',qty:1,unit:'แผ่น',unitPrice:60,total:60,note:'งานคุณรุ่ง'}];
+}
+function initAttendance(){
+  return [{id:1,staff:'ช่าง 1',date:new Date().toISOString().slice(0,10),checkIn:'09:10',checkOut:'',breakMin:60,otRate:70,status:'ลงงานแล้ว',checkInPhoto:true,checkOutPhoto:false}];
+}
+function load(k,fb){try{return JSON.parse(localStorage.getItem(k))||fb;}catch(e){return fb;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+// ─── Nav ──────────────────────────────────────────────────────────────────────
+const navItems=[
+  {key:'jobs',label:'งานทั้งหมด',icon:'list'},
+  {key:'create',label:'รับงานใหม่',icon:'plus'},
+  {key:'notifications',label:'แจ้งเตือน',icon:'bell'},
+  {key:'customers',label:'ลูกค้า',icon:'users'},
+  {key:'attendance',label:'ลงเวลา',icon:'clock',staffOnly:true},
+  {key:'withdraw',label:'เบิกวัสดุ',icon:'box'},
+  {key:'dashboard',label:'Dashboard',icon:'chart',ownerOnly:true},
+  {key:'approvals',label:'อนุมัติ',icon:'alert',ownerOnly:true},
+  {key:'reports',label:'รายงาน',icon:'sheet',ownerOnly:true},
+];
+const IC={
+  list:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+  plus:'M12 5v14M5 12h14',chart:'M3 3v18h18M7 16v-5M12 16V7M17 16v-9',
+  bell:'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0',
+  users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+  wallet:'M20 7H5a2 2 0 0 0 0 4h16v10H5a2 2 0 1-2-2V5a2 2 0 0 1 2-2h15v4Z',
+  alert:'M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z',
+  clock:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 6v6l4 2',
+  camera:'M23 19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h4l2 3h5a2 2 0 0 1 2 2v11ZM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+  check:'M20 6 9 17l-5-5',x:'M18 6 6 18M6 6l12 12',
+  edit:'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z',
+  trash:'M3 6h18M8 6V4h8v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14',
+  arrowLeft:'M19 12H5M12 19l-7-7 7-7',
+  logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+  box:'M21 8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8ZM3.3 7.2 12 12l8.7-4.8M12 22V12',
+  sheet:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6ZM14 2v6h6M8 13h8M8 17h8',
+  copy:'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M8 2h8a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v0a2 2 0 0 1 2-2Z',
+  phone:'M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4 12.91 19.8 19.8 0 0 1 1.08 4.18 2 2 0 0 1 3.06 2h3a2 2 0 0 1 2 1.72c.12.86.32 1.7.59 2.5a2 2 0 0 1-.45 2.11L7.91 9.1a16 16 0 0 0 6 6l.77-1.3a2 2 0 0 1 2.11-.45c.8.27 1.64.47 2.5.59A2 2 0 0 1 22 16.92Z',
+};
+function icon(n,s='18'){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="'+(IC[n]||IC.list)+'"/></svg>';}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function money(v){return new Intl.NumberFormat('th-TH').format(Math.round(v||0));}
+function dateText(v){if(!v)return '-';return new Date(v).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'});}
+function nowTime(){return new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function nextJobNo(){const d=new Date(),y=String(d.getFullYear()).slice(-2),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');const pre='NRD-'+y+m+day;const c=state.jobs.filter(j=>j.jobNo.startsWith(pre)).length+1;return pre+'-'+String(c).padStart(3,'0');}
+function statusBadge(s){const map={'เสร็จแล้ว':'badge-green','ลูกค้ารับแล้ว':'badge-green','ยกเลิก':'badge-red','พบปัญหา':'badge-yellow','รอข้อมูล':'badge-yellow','แก้ไขใหม่':'badge-violet','กำลังทำ':'badge-blue','รับงาน':'badge-gray'};return '<span class="badge '+(map[s]||'badge-gray')+'">'+s+'</span>';}
+function paidBadge(p){return '<span class="badge '+(p?'badge-green':'badge-red')+'">'+(p?'ชำระแล้ว':'ค้างชำระ')+'</span>';}
+function deadlineInfo(job){if(['เสร็จแล้ว','ลูกค้ารับแล้ว','ยกเลิก'].includes(job.status))return null;const today=new Date();today.setHours(0,0,0,0);const due=new Date(job.deliveryDate);due.setHours(0,0,0,0);const diff=Math.round((due-today)/86400000);if(diff<0)return{label:'เกินกำหนด',cls:'badge-red'};if(diff<=1)return{label:'ใกล้ครบกำหนด',cls:'badge-orange'};return null;}
+function showToast(msg){const t=document.getElementById('toast'),tx=document.getElementById('toast-text');t.style.display='flex';tx.textContent=msg;if(state.toastTimer)clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>{t.style.display='none';},2600);}
+function kpiCard(title,value,ic){return '<div class="glass" style="padding:18px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div><div style="font-size:13px;color:#64748b;">'+title+'</div><div style="font-size:26px;font-weight:800;margin-top:4px;">'+value+'</div></div><div style="background:rgba(255,255,255,0.7);border-radius:14px;padding:10px;color:#5B5CFF;">'+icon(ic,'20')+'</div></div></div>';}
+function infoRow(k,v){return '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.5);border-radius:12px;padding:8px 12px;font-size:13px;"><span style="color:#64748b;">'+k+'</span><span style="font-weight:600;">'+esc(v)+'</span></div>';}
+function pBox(label,active,disabled,jid,type){const dis=disabled?'opacity:.5;cursor:not-allowed;':'cursor:pointer;';const oc=disabled?'':' onclick="togglePhoto('+jid+',\''+type+'\')"';return '<button'+oc+' style="width:100%;border:2px dashed '+(active?'#34d399':'rgba(124,108,255,0.3)')+';border-radius:20px;padding:18px;text-align:center;background:'+(active?'rgba(236,253,245,0.6)':'rgba(255,255,255,0.4)')+';'+dis+'"><div style="color:'+(active?'#059669':'#94a3b8')+'">'+icon(active?'check':'camera','28')+'</div><div style="font-weight:600;margin-top:6px;font-size:13px;color:'+(active?'#059669':'#475569')+'">'+label+'</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">'+(active?'เพิ่มแล้ว':disabled?'ยังไม่สามารถเพิ่มได้':'แตะเพื่อเพิ่มตัวอย่าง')+'</div></button>';}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+const ACCOUNTS=[
+  {username:'owner',password:'1234',role:'Owner',name:'เจ้าของ'},
+  {username:'chang1',password:'1234',role:'Staff',name:'ช่าง 1'},
+  {username:'chang2',password:'1234',role:'Staff',name:'ช่าง 2'},
+];
+function doLogin(){
+  const u=(document.getElementById('login-user')?.value||'').trim().toLowerCase();
+  const p=(document.getElementById('login-pass')?.value||'');
+  const acc=ACCOUNTS.find(a=>a.username===u&&a.password===p);
+  const errEl=document.getElementById('login-err');
+  if(!acc){errEl.style.display='block';setTimeout(()=>{errEl.style.display='none';},2500);return;}
+  errEl.style.display='none';
+  login(acc.role,acc.name);
+}
+function login(role,name){state.role=role;state.staffName=name;document.getElementById('login-page').style.display='none';document.getElementById('app').style.display='block';document.getElementById('user-avatar').textContent=name[0];document.getElementById('user-name').textContent=name;document.getElementById('user-role').textContent=role==='Owner'?'เจ้าของ':'ช่าง';renderNav();navigateTo('jobs');}
+function logout(){state.role=null;document.getElementById('app').style.display='none';document.getElementById('login-page').style.display='block';document.getElementById('login-user').value='';document.getElementById('login-pass').value='';}
+
+function renderNav(){
+  const visible=navItems.filter(i=>{if(i.ownerOnly)return state.role==='Owner';if(i.staffOnly)return state.role==='Staff';return true;});
+  const apvCount=state.role==='Owner'?state.approvals.length:0;
+  document.getElementById('nav-list').innerHTML=visible.map(i=>{
+    const badge=(i.key==='approvals'&&apvCount)?'<span style="margin-left:auto;background:#ef4444;color:white;border-radius:99px;padding:0 7px;font-size:11px;">'+apvCount+'</span>':'';
+    return '<button class="nav-btn'+(state.page===i.key?' active':'')+'" onclick="navigateTo(\''+i.key+'\')">'+icon(i.icon,'16')+i.label+badge+'</button>';
+  }).join('');
+}
+function navigateTo(page){state.page=page;renderNav();const titles={jobs:'งานทั้งหมด',create:'รับงานใหม่',dashboard:'Dashboard',notifications:'แจ้งเตือน',customers:'ลูกค้า',detail:'รายละเอียดงาน',attendance:'ลงเวลา',withdraw:'เบิกวัสดุ',approvals:'อนุมัติ',reports:'รายงาน'};document.getElementById('page-title').textContent=titles[page]||page;document.getElementById('search-input').value=state.searchQuery;renderPage();}
+function onSearch(q){state.searchQuery=q;if(state.page==='jobs')renderPage();}
+
+function renderPage(){const p=state.page;if(p==='jobs')renderJobs();else if(p==='create')renderCreate();else if(p==='dashboard')renderDashboard();else if(p==='notifications')renderNotifications();else if(p==='customers')renderCustomers();else if(p==='detail')renderDetail();else if(p==='attendance')renderAttendance();else if(p==='withdraw')renderWithdraw();else if(p==='approvals')renderApprovals();else if(p==='reports')renderReports();}
+
+// ─── Jobs Page ─────────────────────────────────────────────────────────────────
+function renderJobs(){
+  const q=state.searchQuery.toLowerCase();
+  const jobs=state.jobs.filter(j=>{if(!q)return true;return[j.jobNo,j.customer,j.phone,j.details,...j.types].some(v=>String(v).toLowerCase().includes(q));}).sort((a,b)=>new Date(b.receiveDate)-new Date(a.receiveDate));
+  const open=state.jobs.filter(j=>!['เสร็จแล้ว','ลูกค้ารับแล้ว','ยกเลิก'].includes(j.status)).length;
+  const unpaid=state.jobs.filter(j=>!j.paid&&j.status!=='ยกเลิก').length;
+  const rows=jobs.length?jobs.map(j=>{
+    const dl=deadlineInfo(j);
+    const delBtn=state.role==='Owner'
+      ?'<button class="btn-secondary" style="padding:6px 10px;" onclick="deleteJobConfirm('+j.id+')">'+icon('trash','14')+'</button>'
+      :'<button class="btn-secondary" style="padding:6px 10px;" title="ขอลบ" onclick="requestDelete('+j.id+')">'+icon('trash','14')+'</button>';
+    return '<div class="glass" style="padding:16px 20px;margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr 1fr auto auto auto;gap:12px;align-items:center;">'+
+      '<div><div style="font-weight:700;font-size:14px;">'+j.jobNo+'</div><div style="font-size:12px;color:#94a3b8;">'+dateText(j.receiveDate)+' · '+j.receiveTime+'</div></div>'+
+      '<div><div style="font-weight:600;">'+esc(j.customer)+'</div><div style="font-size:12px;color:#94a3b8;">'+esc(j.phone)+(j.line?' · LINE: '+esc(j.line):'')+'</div></div>'+
+      '<div><div style="font-size:13px;color:#475569;">'+j.types.join(', ')+'</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">'+statusBadge(j.status)+(dl?'<span class="badge '+dl.cls+'">'+dl.label+'</span>':'')+'</div></div>'+
+      '<div style="text-align:right;"><div style="font-weight:700;">'+money(j.price)+' ฿</div>'+paidBadge(j.paid)+'</div>'+
+      '<div style="text-align:center;font-size:12px;color:#64748b;">'+dateText(j.deliveryDate)+'</div>'+
+      '<div style="display:flex;gap:6px;"><button class="btn-secondary" style="padding:6px 10px;" onclick="openDetail('+j.id+')">'+icon('arrowLeft','14')+'</button>'+delBtn+'</div>'+
+    '</div>';
+  }).join(''):'<div class="glass" style="padding:48px;text-align:center;color:#94a3b8;">ไม่พบงาน</div>';
+  document.getElementById('content').innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">'+kpiCard('งานทั้งหมด',state.jobs.length,'list')+kpiCard('งานค้างอยู่',open,'clock')+kpiCard('ค้างชำระ',unpaid,'wallet')+'</div>'+
+    '<button class="btn-primary" style="margin-bottom:16px;" onclick="navigateTo(\'create\')">'+icon('plus','14')+' รับงานใหม่</button>'+rows;
+}
+
+// ─── Detail Page ───────────────────────────────────────────────────────────────
+function openDetail(id){state.selectedJobId=id;navigateTo('detail');}
+
+function renderDetail(){
+  const job=state.jobs.find(j=>j.id===state.selectedJobId);
+  if(!job){document.getElementById('content').innerHTML='<div class="glass" style="padding:40px;text-align:center">ไม่พบงาน</div>';return;}
+  const dl=deadlineInfo(job);
+  const statusOptions=['รับงาน','รอข้อมูล','กำลังทำ','เสร็จแล้ว','พบปัญหา','แก้ไขใหม่','ลูกค้ารับแล้ว','ยกเลิก'];
+  const lineMsg='📿 แจ้งงาน นราเดช เลี่ยมกรอบพระ\n\nเลขงาน: '+job.jobNo+'\nลูกค้า: '+job.customer+'\nประเภท: '+job.types.join(', ')+'\nราคา: '+money(job.price)+' ฿ ('+(job.paid?'ชำระแล้ว':'ค้างชำระ')+')\nวันนัดส่ง: '+dateText(job.deliveryDate)+' '+job.deliveryTime+'\n\nขอบคุณที่ใช้บริการครับ 🙏';
+  const editBtn=state.role==='Owner'
+    ?'<button class="btn-primary" style="padding:8px 14px;font-size:13px;" onclick="openEditModal('+job.id+',false)">'+icon('edit','14')+' แก้ไขงาน</button>'
+    :'<button class="btn-secondary" style="padding:8px 14px;font-size:13px;" onclick="openEditModal('+job.id+',true)">'+icon('edit','14')+' ขอแก้ไข</button>';
+
+  document.getElementById('content').innerHTML=
+    '<button class="btn-secondary" style="margin-bottom:16px;" onclick="navigateTo(\'jobs\')">'+icon('arrowLeft','14')+' กลับ</button>'+
+    '<div class="glass" style="padding:20px;margin-bottom:16px;">'+
+      '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;">'+
+        '<h2 style="font-size:22px;font-weight:800;">'+job.jobNo+'</h2>'+
+        statusBadge(job.status)+paidBadge(job.paid)+(dl?'<span class="badge '+dl.cls+'">'+dl.label+'</span>':'')+
+        '<div style="margin-left:auto;">'+editBtn+'</div>'+
+      '</div>'+
+      '<div style="color:#64748b;font-size:14px;">'+esc(job.details)+'</div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:16px;">'+
+      '<div style="display:flex;flex-direction:column;gap:14px;">'+
+        '<div class="glass" style="padding:18px;">'+
+          '<div style="font-weight:700;margin-bottom:12px;">ข้อมูลงาน</div>'+
+          '<div style="display:flex;flex-direction:column;gap:7px;">'+
+            infoRow('ลูกค้า',job.customer)+infoRow('เบอร์โทร',job.phone)+
+            (job.line?infoRow('LINE',job.line):'')+
+            infoRow('รับงาน',dateText(job.receiveDate)+' '+job.receiveTime)+
+            infoRow('นัดส่ง',dateText(job.deliveryDate)+' '+job.deliveryTime)+
+            infoRow('ราคา',money(job.price)+' ฿ · '+job.payMethod)+
+            infoRow('ช่าง',job.staff)+infoRow('ประเภท',job.types.join(', '))+
+            infoRow('จำนวน',job.pieces+' ชิ้น')+
+          '</div>'+
+        '</div>'+
+        '<div class="glass" style="padding:18px;">'+
+          '<div style="font-weight:700;margin-bottom:10px;">'+icon('copy','14')+' ข้อความแจ้งลูกค้า (LINE)</div>'+
+          '<div style="background:rgba(255,255,255,0.5);border-radius:14px;padding:12px;font-size:13px;color:#334155;white-space:pre-line;line-height:1.7;margin-bottom:10px;">'+lineMsg+'</div>'+
+          '<button class="btn-secondary" style="width:100%;font-size:13px;" onclick="copyMsg('+job.id+')">'+icon('copy','14')+' คัดลอกข้อความ</button>'+
+        '</div>'+
+        '<div class="glass" style="padding:18px;">'+
+          '<div style="font-weight:700;margin-bottom:14px;">อัปเดตสถานะ</div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;">'+
+            statusOptions.map(s=>'<button class="'+(job.status===s?'btn-primary':'btn-secondary')+'" style="padding:8px 14px;font-size:13px;" onclick="changeStatus('+job.id+',\''+s+'\')">' +s+'</button>').join('')+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<button class="btn-primary" style="flex:1;" onclick="togglePaid('+job.id+')">'+(job.paid?'ทำเครื่องหมายค้างชำระ':'ทำเครื่องหมายชำระแล้ว')+'</button>'+
+          '<button class="btn-secondary" onclick="navigateTo(\'withdraw\')">'+icon('box','14')+' เบิกวัสดุ</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:14px;">'+
+        '<div class="glass" style="padding:18px;">'+
+          '<div style="font-weight:700;margin-bottom:14px;">รูปภาพ</div>'+
+          pBox('รูปก่อนทำ',job.beforePhoto,false,job.id,'before')+
+          '<div style="margin-top:10px;"></div>'+
+          pBox('รูปหลังทำ',job.afterPhoto,!['เสร็จแล้ว','แก้ไขใหม่','กำลังทำ'].includes(job.status),job.id,'after')+
+        '</div>'+
+        '<div class="glass-dark" style="padding:18px;">'+
+          '<div style="font-size:12px;opacity:0.6;margin-bottom:6px;">หมายเหตุ</div>'+
+          '<div style="font-weight:600;">'+(job.notes||'ไม่มีหมายเหตุ')+'</div>'+
+        '</div>'+
+        (job.issue?
+          '<div class="glass" style="padding:18px;border-color:rgba(251,191,36,0.4);">'+
+            '<div style="font-weight:700;margin-bottom:10px;color:#92400e;">'+icon('alert','14')+' ปัญหาที่พบ</div>'+
+            '<div style="display:flex;flex-direction:column;gap:6px;">'+
+              infoRow('ประเภท',job.issue.type)+infoRow('ความเร่งด่วน',job.issue.priority)+
+              infoRow('รับผิดชอบ',job.issue.staff)+infoRow('แก้ไขภายใน',dateText(job.issue.reworkDate))+
+            '</div>'+
+            (job.issue.details?'<div style="margin-top:8px;font-size:13px;color:#475569;">'+esc(job.issue.details)+'</div>':'')+
+          '</div>':'')+
+        '<div style="display:flex;gap:8px;">'+
+          '<button class="btn-secondary" style="flex:1;font-size:13px;" onclick="openIssueModal('+job.id+')">'+icon('alert','14')+' รายงานปัญหา</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+}
+
+function copyMsg(jobId){
+  const job=state.jobs.find(j=>j.id===jobId);if(!job)return;
+  const msg='📿 แจ้งงาน นราเดช เลี่ยมกรอบพระ\n\nเลขงาน: '+job.jobNo+'\nลูกค้า: '+job.customer+'\nประเภท: '+job.types.join(', ')+'\nราคา: '+money(job.price)+' ฿ ('+(job.paid?'ชำระแล้ว':'ค้างชำระ')+')\nวันนัดส่ง: '+dateText(job.deliveryDate)+' '+job.deliveryTime+'\n\nขอบคุณที่ใช้บริการครับ 🙏';
+  navigator.clipboard.writeText(msg).then(()=>showToast('คัดลอกข้อความแล้ว')).catch(()=>showToast('กรุณา copy ด้วยมือจากกล่องด้านบน'));
+}
+
+function changeStatus(id,status){
+  const job=state.jobs.find(j=>j.id===id);if(!job)return;
+  if(status==='เสร็จแล้ว'&&!job.afterPhoto){showToast('ต้องเพิ่มรูปหลังทำงานก่อนจึงจะ "เสร็จแล้ว" ได้');return;}
+  updateJob(id,{status});showToast('อัปเดตสถานะเป็น: '+status);renderDetail();
+}
+function togglePhoto(id,type){const job=state.jobs.find(j=>j.id===id);if(!job)return;updateJob(id,type==='before'?{beforePhoto:!job.beforePhoto}:{afterPhoto:!job.afterPhoto});showToast('อัปเดตรูปภาพแล้ว');renderDetail();}
+function togglePaid(id){const job=state.jobs.find(j=>j.id===id);if(!job)return;updateJob(id,{paid:!job.paid});showToast(job.paid?'ทำเครื่องหมายค้างชำระแล้ว':'บันทึกการชำระแล้ว');renderDetail();}
+function deleteJobConfirm(id){const job=state.jobs.find(j=>j.id===id);if(!job)return;if(confirm('ลบงาน '+job.jobNo+' ของ '+job.customer+' ใช่ไหม? ไม่สามารถเรียกคืนได้')){state.jobs=state.jobs.filter(j=>j.id!==id);save('nrd_jobs',state.jobs);showToast('ลบงานแล้ว');navigateTo('jobs');}}
+function requestDelete(id){const job=state.jobs.find(j=>j.id===id);if(!job)return;if(!confirm('ขอลบงาน '+job.jobNo+'? เจ้าของต้องอนุมัติก่อน'))return;const req={id:Date.now(),type:'delete',jobId:id,jobNo:job.jobNo,by:state.staffName,at:new Date().toLocaleString('th-TH'),snapshot:job};state.approvals=[req,...state.approvals];save('nrd_apv',state.approvals);showToast('ส่งคำขอลบไปยังเจ้าของแล้ว');renderNav();}
+function updateJob(id,patch){state.jobs=state.jobs.map(j=>j.id===id?Object.assign({},j,patch):j);save('nrd_jobs',state.jobs);}
+
+// ─── Create Job Page ───────────────────────────────────────────────────────────
+let CF={};
+function renderCreate(){
+  const today=todayStr();
+  if(!CF.customer) CF={customer:'',phone:'',line:'',receiveDate:today,receiveTime:'10:00',types:[],pieces:1,details:'',price:'',discount:0,paid:'ชำระแล้ว',payMethod:'โอนเงิน',deliveryDate:today,deliveryTime:'15:00',notes:'',beforePhoto:false};
+  const jno=nextJobNo();
+  const jt=['เลี่ยมกรอบใส','ตั้งกรอบ','ทำห่วง','ซ่อม','รีเวิร์ค','อื่นๆ'];
+  const pm=['เงินสด','โอนเงิน','QR Code','บัตรเครดิต','อื่นๆ'];
+  // Customer search results
+  const csq=(CF._csq||'').toLowerCase();
+  const csResults=csq.length>=1?[...new Map(state.jobs.map(j=>[j.phone||j.customer,{name:j.customer,phone:j.phone,line:j.line||''}])).values()].filter(c=>[c.name,c.phone].some(v=>v.toLowerCase().includes(csq))).slice(0,5):[];
+  const netPrice=Math.max(0,(Number(CF.price)||0)-(Number(CF.discount)||0));
+
+  document.getElementById('content').innerHTML=
+    '<div style="max-width:800px;display:flex;flex-direction:column;gap:14px;">'+
+    '<div class="glass" style="padding:16px 20px;"><div style="font-size:12px;color:#94a3b8;">เลขงาน</div><div style="font-size:20px;font-weight:800;color:#4F5DFF;">'+jno+'</div></div>'+
+
+    // Customer search
+    '<div class="glass" style="padding:20px;">'+
+      '<div style="font-weight:700;margin-bottom:12px;">'+icon('users','16')+' ค้นหาลูกค้าเก่า</div>'+
+      '<div style="position:relative;">'+
+        '<input class="input-field" id="cf_csearch" value="'+esc(CF._csq||'')+'" placeholder="พิมพ์ชื่อหรือเบอร์โทรลูกค้า..." oninput="CF._csq=this.value;renderCreate()"/>'+
+        (csResults.length?'<div style="position:absolute;top:100%;left:0;right:0;z-index:10;background:white;border:1px solid rgba(255,255,255,0.7);border-radius:16px;box-shadow:0 8px 24px rgba(92,103,255,0.15);margin-top:4px;overflow:hidden;">'+
+          csResults.map(c=>'<button onclick="fillCustomer(\''+esc(c.name)+'\',\''+esc(c.phone)+'\',\''+esc(c.line)+'\')" style="width:100%;padding:12px 16px;text-align:left;border:none;background:white;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:13px;" onmouseover="this.style.background=\'#f8faff\'" onmouseout="this.style.background=\'white\'">'+
+            '<div style="font-weight:700;">'+esc(c.name)+'</div><div style="color:#94a3b8;font-size:12px;">'+esc(c.phone)+(c.line?' · LINE: '+esc(c.line):'')+'</div>'+
+          '</button>').join('')+
+        '</div>':'')+
+      '</div>'+
+    '</div>'+
+
+    '<div class="glass" style="padding:20px;"><div style="font-weight:700;margin-bottom:14px;">ข้อมูลลูกค้า</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">'+
+        fld('ชื่อลูกค้า','text','customer','cf_customer',CF.customer,'ชื่อลูกค้า...')+fld('เบอร์โทร','tel','phone','cf_phone',CF.phone,'0812345678')+
+      '</div>'+fld('LINE ID (ถ้ามี)','text','line','cf_line',CF.line,'line_id...')+'</div>'+
+
+    '<div class="glass" style="padding:20px;"><div style="font-weight:700;margin-bottom:14px;">วันที่รับงาน</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">'+
+        fld('วันรับงาน','date','receiveDate','cf_receiveDate',CF.receiveDate)+fld('เวลารับงาน','time','receiveTime','cf_receiveTime',CF.receiveTime)+
+        '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">รับโดย</div><input class="input-field" value="'+esc(state.staffName)+'" readonly/></label>'+
+      '</div></div>'+
+
+    '<div class="glass" style="padding:20px;"><div style="font-weight:700;margin-bottom:10px;">ประเภทงาน</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">'+jt.map(t=>'<button class="'+(CF.types.includes(t)?'btn-primary':'btn-secondary')+'" style="padding:7px 14px;font-size:13px;" onclick="toggleType(\''+t+'\')">' +t+'</button>').join('')+'</div>'+
+      '<div style="display:grid;grid-template-columns:120px 1fr;gap:12px;">'+fld('จำนวน','number','pieces','cf_pieces',CF.pieces)+fld('รายละเอียดงาน','text','details','cf_details',CF.details,'รายละเอียดงาน...')+'</div></div>'+
+
+    // Payment with discount
+    '<div class="glass" style="padding:20px;"><div style="font-weight:700;margin-bottom:14px;">การชำระเงิน</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">'+
+        fld('ราคาเต็ม (บาท)','number','price','cf_price',CF.price,'0')+
+        fld('ส่วนลด (บาท)','number','discount','cf_discount',CF.discount||0,'0')+
+        '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">ราคาสุทธิ</div>'+
+          '<div class="input-field" style="background:rgba(79,93,255,0.06);font-weight:800;color:#4F5DFF;font-size:16px;">'+money(netPrice)+' ฿</div></label>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+
+        selFld('สถานะชำระ','cf_paid',['ชำระแล้ว','ค้างชำระ'],CF.paid)+selFld('วิธีชำระ','cf_payMethod',pm,CF.payMethod)+
+      '</div></div>'+
+
+    '<div class="glass" style="padding:20px;"><div style="font-weight:700;margin-bottom:14px;">วันนัดส่ง</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+fld('วันนัดส่ง','date','deliveryDate','cf_deliveryDate',CF.deliveryDate)+fld('เวลานัดส่ง','time','deliveryTime','cf_deliveryTime',CF.deliveryTime)+'</div></div>'+
+
+    fld('หมายเหตุ','text','notes','cf_notes',CF.notes,'หมายเหตุเพิ่มเติม...')+
+
+    // Before photo — required
+    '<div class="glass" style="padding:20px;border:'+(CF.beforePhoto?'1px solid rgba(52,211,153,0.4)':'2px dashed rgba(239,68,68,0.35)')+';"><div style="font-weight:700;margin-bottom:4px;">'+icon('camera','16')+' รูปรับงาน <span style="color:#ef4444;font-size:13px;">* จำเป็น</span></div>'+
+      '<div style="font-size:13px;color:#64748b;margin-bottom:14px;">ต้องถ่ายรูปหรือแนบรูปก่อนบันทึกงาน</div>'+
+      '<button onclick="CF.beforePhoto=!CF.beforePhoto;renderCreate()" style="width:100%;border:2px dashed '+(CF.beforePhoto?'#34d399':'rgba(239,68,68,0.4)')+';border-radius:20px;padding:24px;text-align:center;background:'+(CF.beforePhoto?'rgba(236,253,245,0.7)':'rgba(255,255,255,0.4)')+';cursor:pointer;">'+
+        '<div style="color:'+(CF.beforePhoto?'#059669':'#ef4444')+';">'+icon(CF.beforePhoto?'check':'camera','32')+'</div>'+
+        '<div style="font-weight:700;margin-top:8px;font-size:14px;color:'+(CF.beforePhoto?'#059669':'#ef4444')+'">'+(CF.beforePhoto?'✓ เพิ่มรูปรับงานแล้ว':'แตะเพื่อถ่าย / แนบรูปรับงาน')+'</div>'+
+        '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">'+(CF.beforePhoto?'กดอีกครั้งเพื่อยกเลิก':'ยังไม่มีรูป — ไม่สามารถบันทึกงานได้')+'</div>'+
+      '</button>'+
+    '</div>'+
+
+    '<div style="display:flex;gap:10px;padding-bottom:40px;">'+
+      '<button class="btn-secondary" style="flex:1;" onclick="navigateTo(\'jobs\')">ยกเลิก</button>'+
+      '<button class="'+(CF.beforePhoto?'btn-primary':'btn-secondary')+'" style="flex:2;'+(CF.beforePhoto?'':'opacity:0.6;')+'" onclick="submitJob(\''+jno+'\')">บันทึกงาน</button>'+
+    '</div>'+
+    '</div>';
+}
+function fld(label,type,key,id,val,ph){return '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">'+label+'</div><input class="input-field" type="'+type+'" id="'+id+'" value="'+esc(val)+'" placeholder="'+(ph||'')+'" oninput="CF[\''+key+'\']=this.value"/></label>';}
+function selFld(label,id,opts,val){return '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">'+label+'</div><select class="input-field" id="'+id+'" onchange="CF[\''+id.replace('cf_','')+'\']=this.value">'+opts.map(o=>'<option value="'+o+'"'+(o===val?' selected':'')+'>'+o+'</option>').join('')+'</select></label>';}
+function toggleType(t){if(CF.types.includes(t))CF.types=CF.types.filter(x=>x!==t);else CF.types=[...CF.types,t];renderCreate();}
+function fillCustomer(name,phone,line){CF.customer=name;CF.phone=phone;CF.line=line;CF._csq='';renderCreate();setTimeout(()=>{const c=document.getElementById('cf_customer');if(c)c.value=name;const p=document.getElementById('cf_phone');if(p)p.value=phone;const l=document.getElementById('cf_line');if(l)l.value=line;},50);}
+function submitJob(jno){
+  const customer=(document.getElementById('cf_customer')?.value||CF.customer||'').trim();
+  const phone=(document.getElementById('cf_phone')?.value||CF.phone||'').trim();
+  if(!customer||!phone){showToast('กรุณาใส่ชื่อลูกค้าและเบอร์โทร');return;}
+  if(!CF.beforePhoto){showToast('กรุณาถ่ายรูปรับงานก่อนบันทึก');return;}
+  const fullPrice=Number(document.getElementById('cf_price')?.value)||0;
+  const discount=Number(document.getElementById('cf_discount')?.value)||0;
+  const netPrice=Math.max(0,fullPrice-discount);
+  const newJob={id:Date.now(),jobNo:jno,customer,phone,line:document.getElementById('cf_line')?.value||'',receiveDate:document.getElementById('cf_receiveDate').value,receiveTime:document.getElementById('cf_receiveTime').value,deliveryDate:document.getElementById('cf_deliveryDate').value,deliveryTime:document.getElementById('cf_deliveryTime').value,types:CF.types.length?CF.types:['อื่นๆ'],pieces:Number(document.getElementById('cf_pieces').value)||1,price:netPrice,fullPrice,discount,paid:document.getElementById('cf_paid').value==='ชำระแล้ว',payMethod:document.getElementById('cf_payMethod').value,status:'รับงาน',details:document.getElementById('cf_details').value,staff:state.staffName,beforePhoto:true,afterPhoto:false,notes:document.getElementById('cf_notes')?.value||''};
+  state.jobs=[newJob,...state.jobs];save('nrd_jobs',state.jobs);CF={};showToast('บันทึกงาน '+jno+' แล้ว');navigateTo('jobs');
+}
+
+// ─── Dashboard ─────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const jobs=state.jobs;
+  const rev=jobs.filter(j=>j.paid&&j.status!=='ยกเลิก').reduce((s,j)=>s+j.price,0);
+  const unp=jobs.filter(j=>!j.paid&&j.status!=='ยกเลิก').reduce((s,j)=>s+j.price,0);
+  const open=jobs.filter(j=>!['เสร็จแล้ว','ลูกค้ารับแล้ว','ยกเลิก'].includes(j.status)).length;
+  const done=jobs.filter(j=>['เสร็จแล้ว','ลูกค้ารับแล้ว'].includes(j.status)).length;
+  const byStaff=['ช่าง 1','ช่าง 2','ช่าง 3'].map(s=>({label:s,value:jobs.filter(j=>j.staff===s).length}));
+  const maxS=Math.max(1,...byStaff.map(i=>i.value));
+  document.getElementById('content').innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">'+kpiCard('รายได้รวม',money(rev)+' ฿','wallet')+kpiCard('ค้างชำระ',money(unp)+' ฿','alert')+kpiCard('งานค้างอยู่',open,'clock')+kpiCard('เสร็จแล้ว',done,'check')+'</div>'+
+    '<div class="glass" style="padding:20px;"><div style="font-weight:700;margin-bottom:16px;">งานตามช่าง</div>'+
+    byStaff.map(i=>'<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>'+i.label+'</span><span style="font-weight:700;">'+i.value+' งาน</span></div><div style="height:10px;background:rgba(255,255,255,0.6);border-radius:99px;overflow:hidden;"><div style="height:100%;background:linear-gradient(90deg,#4F5DFF,#7C6CFF);width:'+Math.round(i.value/maxS*100)+'%;border-radius:99px;"></div></div></div>').join('')+'</div>';
+}
+
+// ─── Notifications ─────────────────────────────────────────────────────────────
+function renderNotifications(){
+  const items=[];
+  state.jobs.forEach(j=>{const dl=deadlineInfo(j);if(dl&&dl.label==='เกินกำหนด')items.push({urgent:true,type:'เกินกำหนด',text:j.jobNo+' — '+j.customer+' เกินนัดส่งแล้ว ('+dateText(j.deliveryDate)+')',icon:'alert',id:j.id});else if(dl&&dl.label==='ใกล้ครบกำหนด')items.push({urgent:false,type:'ใกล้ครบกำหนด',text:j.jobNo+' — '+j.customer+' นัดส่งวันนี้/พรุ่งนี้',icon:'clock',id:j.id});});
+  state.jobs.filter(j=>!j.paid&&j.status!=='ยกเลิก').forEach(j=>items.push({urgent:false,type:'ค้างชำระ',text:j.jobNo+' — '+j.customer+' ยังไม่ชำระ '+money(j.price)+' ฿',icon:'wallet',id:j.id}));
+  document.getElementById('content').innerHTML='<div style="font-size:13px;color:#94a3b8;margin-bottom:12px;">'+items.length+' รายการ</div>'+
+    (items.length?items.map(i=>'<div class="glass" style="padding:16px 20px;margin-bottom:10px;display:flex;gap:14px;align-items:center;cursor:pointer;" onclick="openDetail('+i.id+')">'+
+      '<div style="background:'+(i.urgent?'rgba(254,226,226,0.8)':'rgba(255,255,255,0.7)')+';border-radius:14px;padding:10px;color:'+(i.urgent?'#dc2626':'#5B5CFF')+';">'+icon(i.icon,'20')+'</div>'+
+      '<div><span class="badge '+(i.urgent?'badge-red':'badge-yellow')+'">'+i.type+'</span><div style="font-weight:600;margin-top:6px;font-size:14px;">'+i.text+'</div></div>'+
+    '</div>').join(''):'<div class="glass" style="padding:48px;text-align:center;color:#94a3b8;">ไม่มีการแจ้งเตือน</div>');
+}
+
+// ─── Customers ─────────────────────────────────────────────────────────────────
+function renderCustomers(){
+  const map=new Map();
+  state.jobs.forEach(j=>{const key=j.phone||j.customer;if(!map.has(key))map.set(key,{name:j.customer,phone:j.phone,line:j.line||'',jobs:[],total:0,latestDate:j.receiveDate});const c=map.get(key);c.jobs.push(j);c.total+=j.price;if(new Date(j.receiveDate)>new Date(c.latestDate))c.latestDate=j.receiveDate;});
+  const customers=[...map.values()].sort((a,b)=>new Date(b.latestDate)-new Date(a.latestDate));
+  document.getElementById('content').innerHTML=
+    kpiCard('ลูกค้าทั้งหมด',customers.length,'users')+
+    '<div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">'+
+    customers.map(c=>'<div class="glass" style="padding:16px 20px;display:grid;grid-template-columns:1.5fr 1fr 0.7fr 1fr 1fr;gap:12px;align-items:center;">'+
+      '<div><div style="font-weight:700;">'+esc(c.name)+'</div><div style="font-size:12px;color:#94a3b8;">'+esc(c.phone)+(c.line?' · LINE: '+esc(c.line):'')+'</div></div>'+
+      '<div style="font-size:13px;color:#475569;">'+c.jobs.length+' รายการ</div>'+
+      '<div style="font-weight:700;">'+money(c.total)+' ฿</div>'+
+      '<div style="font-size:12px;color:#94a3b8;">'+dateText(c.latestDate)+'</div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+c.jobs.slice(0,2).map(j=>'<span class="badge badge-gray" style="cursor:pointer;" onclick="openDetail('+j.id+')">'+j.jobNo+'</span>').join('')+'</div>'+
+    '</div>').join('')+'</div>';
+}
+
+// ─── Attendance ─────────────────────────────────────────────────────────────────
+function renderAttendance(){
+  const today=todayStr();
+  const my=state.attendance.filter(r=>r.staff===state.staffName);
+  const tr=my.find(r=>r.date===today);
+  function calcRec(r){if(!r||!r.checkIn||!r.checkOut)return{work:0,ot:0,otAmt:0};const[sh,sm]=r.checkIn.split(':').map(Number);const[eh,em]=r.checkOut.split(':').map(Number);const gross=(eh*60+em)-(sh*60+sm);const work=Math.max(0,gross-(r.breakMin||60));const ot=Math.max(0,(eh*60+em)-17*60);return{work,ot,otAmt:Math.round(ot/60*(r.otRate||70))};}
+  function hm(m){const h=Math.floor(m/60),min=m%60;return h+'h '+String(min).padStart(2,'0')+'m';}
+  const tc=calcRec(tr);
+  document.getElementById('content').innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">'+
+      kpiCard('สถานะวันนี้',tr?tr.status:'ยังไม่ลงเวลา','clock')+kpiCard('เวลาเข้างาน',tr?.checkIn||'-','check')+kpiCard('เวลาออกงาน',tr?.checkOut||'-','logout')+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">'+
+      '<button onclick="openClockModal(\'in\')" style="background:linear-gradient(135deg,rgba(79,93,255,0.85),rgba(124,108,255,0.85));border:1px solid rgba(255,255,255,0.3);border-radius:24px;padding:32px;text-align:left;cursor:pointer;color:white;">'+
+        icon('camera','36')+'<div style="font-size:20px;font-weight:800;margin-top:16px;">ลงเวลาเข้างาน</div><div style="font-size:13px;opacity:0.7;margin-top:4px;">ถ่ายรูปยืนยัน ก่อนเข้างาน</div>'+
+      '</button>'+
+      '<button onclick="openClockModal(\'out\')" class="glass" style="padding:32px;text-align:left;cursor:pointer;border:none;">'+
+        icon('camera','36')+'<div style="font-size:20px;font-weight:800;margin-top:16px;">ลงเวลาออกงาน</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">ถ่ายรูปยืนยัน ก่อนออกงาน</div>'+
+      '</button>'+
+    '</div>'+
+    '<div class="glass" style="overflow:hidden;">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.6);font-weight:700;">ประวัติการทำงาน</div>'+
+      (my.length?my.map(r=>{const c=calcRec(r);return'<div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.4);display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:12px;align-items:center;font-size:13px;">'+
+        '<div><div style="font-weight:700;">'+dateText(r.date)+'</div><span class="badge badge-gray">'+r.status+'</span></div>'+
+        '<div>เข้า: <b>'+(r.checkIn||'-')+'</b></div>'+
+        '<div>ออก: <b>'+(r.checkOut||'-')+'</b></div>'+
+        '<div>ทำงาน: <b>'+hm(c.work)+'</b></div>'+
+        '<div>OT: <b>'+money(c.otAmt)+' ฿</b></div>'+
+      '</div>';}).join(''):'<div style="padding:40px;text-align:center;color:#94a3b8;">ยังไม่มีประวัติ</div>')+
+    '</div>';
+}
+function openClockModal(type){
+  const today=todayStr();
+  if(type==='in'&&state.attendance.some(r=>r.staff===state.staffName&&r.date===today&&r.checkIn)){showToast('ลงเวลาเข้าวันนี้ไปแล้ว');return;}
+  if(type==='out'){const rec=state.attendance.find(r=>r.staff===state.staffName&&r.date===today);if(!rec?.checkIn){showToast('กรุณาลงเวลาเข้าก่อน');return;}if(rec?.checkOut){showToast('ลงเวลาออกวันนี้ไปแล้ว');return;}}
+  const label=type==='in'?'เข้างาน':'ออกงาน';
+  const o=document.getElementById('modal-overlay');o.style.display='flex';
+  o.innerHTML='<div class="glass" style="width:100%;max-width:480px;padding:32px;text-align:center;">'+
+    '<div style="font-size:48px;margin-bottom:12px;">📷</div>'+
+    '<h3 style="font-size:22px;font-weight:800;margin-bottom:8px;">ถ่ายรูปลงเวลา'+label+'</h3>'+
+    '<p style="color:#64748b;font-size:14px;margin-bottom:24px;">กดปุ่มด้านล่างเพื่อถ่ายรูปยืนยันตัวตน<br/>เวลาจะถูกบันทึกทันทีหลังถ่ายรูป</p>'+
+    '<div id="clock-preview" style="width:100%;height:180px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);border-radius:20px;margin-bottom:20px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:14px;">กล้องพร้อมแล้ว — กดถ่ายรูป</div>'+
+    '<div style="display:flex;gap:10px;">'+
+      '<button class="btn-secondary" style="flex:1;" onclick="closeModal()">ยกเลิก</button>'+
+      '<button class="btn-primary" style="flex:2;" onclick="confirmClock(\''+type+'\')">'+icon('camera','16')+' ถ่ายรูป + บันทึกเวลา</button>'+
+    '</div>'+
+  '</div>';
+}
+function confirmClock(type){
+  const today=todayStr();const time=nowTime();
+  if(type==='in'){state.attendance=[{id:Date.now(),staff:state.staffName,date:today,checkIn:time,checkOut:'',breakMin:60,otRate:70,status:'ลงงานแล้ว',checkInPhoto:true,checkOutPhoto:false},...state.attendance];}
+  else{state.attendance=state.attendance.map(r=>r.staff===state.staffName&&r.date===today?{...r,checkOut:time,status:'ออกงานแล้ว',checkOutPhoto:true}:r);}
+  save('nrd_att',state.attendance);closeModal();showToast('ถ่ายรูปและลงเวลา'+(type==='in'?'เข้า':'ออก')+'งานแล้ว ('+time+')');renderAttendance();
+}
+function clockIn(){openClockModal('in');}
+function clockOut(){openClockModal('out');}
+
+// ─── Withdraw ──────────────────────────────────────────────────────────────────
+let WF={};
+function renderWithdraw(){
+  const today=todayStr();
+  if(!WF.date) WF={date:today,time:nowTime(),refType:'job',jobNo:state.jobs[0]?.jobNo||'',itemId:stockCatalog[0].id,qty:1,note:''};
+  const stk=stockCatalog.find(i=>i.id===WF.itemId)||stockCatalog[0];
+  const tot=stk.price*(Number(WF.qty)||1);
+  const totalCost=state.withdrawals.reduce((s,r)=>s+r.total,0);
+  document.getElementById('content').innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">'+
+      kpiCard('รายการเบิกทั้งหมด',state.withdrawals.length,'box')+
+      kpiCard('จำนวนรวม',state.withdrawals.reduce((s,r)=>s+r.qty,0)+' ชิ้น','chart')+
+      (state.role==='Owner'?kpiCard('มูลค่ารวม',money(totalCost)+' ฿','wallet'):kpiCard('เบิกวันนี้',state.withdrawals.filter(r=>r.date===today).length,'clock'))+
+    '</div>'+
+    '<div class="glass" style="padding:20px;margin-bottom:20px;"><div style="font-weight:700;margin-bottom:14px;">บันทึกการเบิกวัสดุ</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">'+
+        wFld('วันที่','date','date','wd_date',WF.date)+wFld('เวลา','time','time','wd_time',WF.time)+
+        '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">ประเภท</div>'+
+        '<select class="input-field" id="wd_refType" onchange="onWdSel(\'refType\',this.value)">'+
+          ['งานลูกค้า','ทั่วไป'].map(o=>'<option value="'+o+'"'+(o===(WF.refType==='job'?'งานลูกค้า':'ทั่วไป')?' selected':'')+'>'+o+'</option>').join('')+
+        '</select></label>'+
+      '</div>'+
+      (WF.refType==='job'?
+        '<div style="margin-bottom:12px;"><label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">เลขงาน</div>'+
+        '<select class="input-field" id="wd_jobNo" onchange="onWdSel(\'jobNo\',this.value)">'+state.jobs.map(j=>'<option value="'+j.jobNo+'"'+(j.jobNo===WF.jobNo?' selected':'')+'>'+j.jobNo+' – '+j.customer+'</option>').join('')+'</select></label></div>':'')+
+      '<div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;">'+
+        '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">วัสดุ</div>'+
+        '<select class="input-field" id="wd_item" onchange="onWdSel(\'item\',this.value)">'+stockCatalog.map(i=>'<option value="'+i.id+'"'+(i.id===WF.itemId?' selected':'')+'>'+i.label+' ('+i.price+' ฿/'+i.unit+')</option>').join('')+'</select></label>'+
+        wFld('จำนวน','number','qty','wd_qty',WF.qty)+
+      '</div>'+
+      wFld('หมายเหตุ','text','note','wd_note',WF.note,'หมายเหตุ...')+
+      '<div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">'+
+        '<div style="font-size:14px;color:#64748b;">ประมาณ: <b style="color:#4F5DFF;">'+money(tot)+' ฿</b> ('+stk.price+' ฿/'+stk.unit+')</div>'+
+        '<button class="btn-primary" onclick="submitWithdraw()">บันทึกการเบิก</button>'+
+      '</div></div>'+
+    '<div class="glass" style="overflow:hidden;">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.6);font-weight:700;">ประวัติการเบิก</div>'+
+      (state.withdrawals.length?state.withdrawals.map(r=>'<div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.4);display:grid;grid-template-columns:1fr 1.5fr 0.7fr 0.7fr 1fr;gap:12px;align-items:center;font-size:13px;">'+
+        '<div><div style="font-weight:700;">'+r.refNo+'</div><div style="font-size:12px;color:#94a3b8;">'+dateText(r.date)+' '+r.time+'</div></div>'+
+        '<div>'+r.item+'<div style="font-size:12px;color:#94a3b8;">'+(r.note||'-')+'</div></div>'+
+        '<span class="badge badge-gray">'+r.qty+' '+r.unit+'</span>'+
+        (state.role==='Owner'?'<div style="font-weight:700;">'+money(r.total)+' ฿</div>':'<div></div>')+
+        '<div style="font-size:12px;color:#64748b;">'+r.staff+'</div>'+
+      '</div>').join(''):'<div style="padding:40px;text-align:center;color:#94a3b8;">ยังไม่มีรายการ</div>')+
+    '</div>';
+}
+function wFld(label,type,key,id,val,ph){return '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">'+label+'</div><input class="input-field" type="'+type+'" id="'+id+'" value="'+esc(String(val||''))+'" placeholder="'+(ph||'')+'" oninput="WF[\''+key+'\']=this.value"/></label>';}
+function onWdSel(key,val){
+  if(key==='refType'){WF.refType=val==='งานลูกค้า'?'job':'other';renderWithdraw();return;}
+  if(key==='jobNo'){WF.jobNo=val;return;}
+  if(key==='item'){WF.itemId=val;renderWithdraw();return;}
+}
+function submitWithdraw(){
+  const stk=stockCatalog.find(i=>i.id===WF.itemId)||stockCatalog[0];
+  const qty=Number(document.getElementById('wd_qty')?.value)||1;
+  const refNo=WF.refType==='job'?WF.jobNo:'WDN-'+todayStr().replace(/-/g,'')+'-'+String(state.withdrawals.length+1).padStart(3,'0');
+  const rec={id:Date.now(),date:document.getElementById('wd_date')?.value||todayStr(),time:document.getElementById('wd_time')?.value||nowTime(),refNo,refType:WF.refType,staff:state.staffName,item:stk.label,qty,unit:stk.unit,unitPrice:stk.price,total:qty*stk.price,note:document.getElementById('wd_note')?.value||''};
+  state.withdrawals=[rec,...state.withdrawals];save('nrd_wd',state.withdrawals);
+  WF={};showToast('บันทึกการเบิก '+stk.label+' แล้ว');renderWithdraw();
+}
+
+// ─── Approvals ─────────────────────────────────────────────────────────────────
+function renderApprovals(){
+  const apvs=state.approvals;
+  document.getElementById('content').innerHTML=
+    '<div style="margin-bottom:20px;">'+kpiCard('รอการอนุมัติ',apvs.length,'alert')+'</div>'+
+    '<div style="display:flex;flex-direction:column;gap:12px;">'+
+    (apvs.length?apvs.map(r=>'<div class="glass" style="padding:20px;">'+
+      '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;">'+
+        '<div><span class="badge '+(r.type==='delete'?'badge-red':'badge-blue')+'">'+(r.type==='delete'?'คำขอลบ':'คำขอแก้ไข')+'</span>'+
+          '<div style="font-size:20px;font-weight:800;margin-top:6px;">'+r.jobNo+'</div>'+
+          '<div style="font-size:13px;color:#94a3b8;">โดย '+esc(r.by)+' · '+r.at+'</div></div>'+
+        '<div style="display:flex;gap:8px;"><button class="btn-secondary" onclick="rejectApv('+r.id+')">ปฏิเสธ</button><button class="btn-primary" onclick="approveApv('+r.id+')">อนุมัติ</button></div>'+
+      '</div>'+
+      (r.patch?'<div style="background:rgba(255,255,255,0.5);border-radius:14px;padding:12px;font-size:13px;color:#475569;"><b>การเปลี่ยนแปลง:</b> '+Object.entries(r.patch).map(([k,v])=>k+': '+esc(String(v))).join(' · ')+'</div>':
+       r.type==='delete'?'<div style="background:rgba(254,226,226,0.5);border-radius:14px;padding:12px;font-size:13px;color:#be123c;">ขอลบงาน '+r.jobNo+'</div>':'')+
+    '</div>').join(''):'<div class="glass" style="padding:48px;text-align:center;color:#94a3b8;">ไม่มีคำขออนุมัติ</div>')+
+    '</div>';
+}
+function approveApv(id){const req=state.approvals.find(r=>r.id===id);if(!req)return;if(req.type==='delete'){state.jobs=state.jobs.filter(j=>j.id!==req.jobId);save('nrd_jobs',state.jobs);}if(req.type==='edit'&&req.patch){updateJob(req.jobId,req.patch);}state.approvals=state.approvals.filter(r=>r.id!==id);save('nrd_apv',state.approvals);showToast('อนุมัติ '+req.jobNo+' แล้ว');renderApprovals();renderNav();}
+function rejectApv(id){const req=state.approvals.find(r=>r.id===id);state.approvals=state.approvals.filter(r=>r.id!==id);save('nrd_apv',state.approvals);showToast('ปฏิเสธคำขอ '+(req?.jobNo||'')+' แล้ว');renderApprovals();renderNav();}
+
+// ─── Reports ───────────────────────────────────────────────────────────────────
+function renderReports(){
+  const jobs=state.jobs;
+  const rev=jobs.filter(j=>j.paid&&j.status!=='ยกเลิก').reduce((s,j)=>s+j.price,0);
+  const wdCost=state.withdrawals.reduce((s,r)=>s+r.total,0);
+  document.getElementById('content').innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">'+kpiCard('รายได้รวม',money(rev)+' ฿','wallet')+kpiCard('งานทั้งหมด',jobs.length,'list')+kpiCard('ต้นทุนวัสดุ',money(wdCost)+' ฿','box')+'</div>'+
+    '<div class="glass" style="overflow:hidden;">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.6);font-weight:700;">ตารางงานทั้งหมด</div>'+
+      '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+        '<thead><tr style="background:rgba(255,255,255,0.35);">'+['เลขงาน','ลูกค้า','ช่าง','สถานะ','ชำระ','ราคา','วันนัดส่ง'].map(h=>'<th style="padding:10px 16px;text-align:left;font-weight:600;color:#64748b;white-space:nowrap;">'+h+'</th>').join('')+'</tr></thead>'+
+        '<tbody>'+jobs.map(j=>'<tr style="border-bottom:1px solid rgba(255,255,255,0.4);"><td style="padding:10px 16px;font-weight:700;white-space:nowrap;">'+j.jobNo+'</td><td style="padding:10px 16px;">'+esc(j.customer)+'</td><td style="padding:10px 16px;">'+esc(j.staff)+'</td><td style="padding:10px 16px;">'+statusBadge(j.status)+'</td><td style="padding:10px 16px;">'+paidBadge(j.paid)+'</td><td style="padding:10px 16px;font-weight:700;white-space:nowrap;">'+money(j.price)+' ฿</td><td style="padding:10px 16px;">'+dateText(j.deliveryDate)+'</td></tr>').join('')+
+        '</tbody></table></div></div>';
+}
+
+// ─── Edit Job Modal ─────────────────────────────────────────────────────────────
+function openEditModal(jobId,asRequest){
+  const job=state.jobs.find(j=>j.id===jobId);if(!job)return;
+  const jt=['เลี่ยมกรอบใส','ตั้งกรอบ','ทำห่วง','ซ่อม','รีเวิร์ค','อื่นๆ'];
+  const pm=['เงินสด','โอนเงิน','QR Code','บัตรเครดิต','อื่นๆ'];
+  const so=['รับงาน','รอข้อมูล','กำลังทำ','เสร็จแล้ว','พบปัญหา','แก้ไขใหม่','ลูกค้ารับแล้ว','ยกเลิก'];
+  const o=document.getElementById('modal-overlay');
+  o._editTypes=[...job.types];o._editJobId=jobId;o._asRequest=asRequest;
+  o.style.display='flex';
+  o.innerHTML='<div class="glass" style="width:100%;max-width:700px;max-height:90vh;overflow-y:auto;padding:28px;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">'+
+      '<div><h3 style="font-size:20px;font-weight:800;">'+(asRequest?'ขอแก้ไขงาน ':'แก้ไขงาน ')+job.jobNo+'</h3>'+
+      '<p style="font-size:13px;color:#94a3b8;">'+(asRequest?'จะส่งให้เจ้าของอนุมัติ':'เจ้าของ: บันทึกทันที')+'</p></div>'+
+      '<button class="btn-secondary" style="padding:8px 14px;" onclick="closeModal()">ปิด</button>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">'+
+      mInp('ชื่อลูกค้า','em_customer',job.customer)+mInp('เบอร์โทร','em_phone',job.phone)+
+      mInp('LINE ID','em_line',job.line||'')+mInp('รายละเอียดงาน','em_details',job.details)+
+      mInp('ราคา','em_price',String(job.price),'number')+mSel('วิธีชำระ','em_payMethod',pm,job.payMethod)+
+      mSel('สถานะชำระ','em_paid',['ชำระแล้ว','ค้างชำระ'],job.paid?'ชำระแล้ว':'ค้างชำระ')+mSel('สถานะงาน','em_status',so,job.status)+
+      mInp('วันนัดส่ง','em_deliveryDate',job.deliveryDate,'date')+mInp('เวลานัดส่ง','em_deliveryTime',job.deliveryTime,'time')+
+    '</div>'+
+    '<div style="font-weight:700;margin-bottom:10px;">ประเภทงาน</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">'+jt.map(t=>'<button class="'+(job.types.includes(t)?'btn-primary':'btn-secondary')+'" style="padding:6px 12px;font-size:13px;" onclick="toggleEmType(this,\''+t+'\')">' +t+'</button>').join('')+'</div>'+
+    '<div style="display:flex;justify-content:flex-end;gap:10px;">'+
+      '<button class="btn-secondary" onclick="closeModal()">ยกเลิก</button>'+
+      '<button class="btn-primary" onclick="saveEdit('+jobId+','+asRequest+')">'+(asRequest?'ส่งคำขอ':'บันทึก')+'</button>'+
+    '</div></div>';
+}
+function mInp(label,id,val,type){type=type||'text';return '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">'+label+'</div><input class="input-field" type="'+type+'" id="'+id+'" value="'+esc(val||'')+'"/></label>';}
+function mSel(label,id,opts,val){return '<label><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">'+label+'</div><select class="input-field" id="'+id+'">'+opts.map(o=>'<option value="'+o+'"'+(o===val?' selected':'')+'>'+o+'</option>').join('')+'</select></label>';}
+function toggleEmType(btn,t){const o=document.getElementById('modal-overlay');if(!o._editTypes)o._editTypes=[];if(o._editTypes.includes(t)){o._editTypes=o._editTypes.filter(x=>x!==t);btn.className='btn-secondary';btn.style.cssText='padding:6px 12px;font-size:13px;';}else{o._editTypes.push(t);btn.className='btn-primary';btn.style.cssText='padding:6px 12px;font-size:13px;';}}
+function saveEdit(jobId,asRequest){
+  const g=id=>document.getElementById(id)?.value||'';
+  const patch={customer:g('em_customer'),phone:g('em_phone'),line:g('em_line'),details:g('em_details'),price:Number(g('em_price'))||0,payMethod:g('em_payMethod'),paid:g('em_paid')==='ชำระแล้ว',status:g('em_status'),deliveryDate:g('em_deliveryDate'),deliveryTime:g('em_deliveryTime'),types:document.getElementById('modal-overlay')._editTypes||[]};
+  if(asRequest){const job=state.jobs.find(j=>j.id===jobId);const req={id:Date.now(),type:'edit',jobId,jobNo:job?.jobNo||'',by:state.staffName,at:new Date().toLocaleString('th-TH'),patch};state.approvals=[req,...state.approvals];save('nrd_apv',state.approvals);showToast('ส่งคำขอแก้ไขไปยังเจ้าของแล้ว');renderNav();}
+  else{updateJob(jobId,patch);showToast('บันทึกการแก้ไขแล้ว');}
+  closeModal();renderDetail();
+}
+
+// ─── Issue Modal ────────────────────────────────────────────────────────────────
+function openIssueModal(jobId){
+  const job=state.jobs.find(j=>j.id===jobId);if(!job)return;
+  const o=document.getElementById('modal-overlay');o.style.display='flex';
+  o.innerHTML='<div class="glass" style="width:100%;max-width:600px;max-height:90vh;overflow-y:auto;padding:28px;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">'+
+      '<h3 style="font-size:20px;font-weight:800;">รายงานปัญหา '+job.jobNo+'</h3>'+
+      '<button class="btn-secondary" style="padding:8px 14px;" onclick="closeModal()">ปิด</button>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">'+
+      mSel('ประเภทปัญหา','im_type',['กรอบมีรอย','ไม่ตรงคำสั่ง','ห่วงไม่แน่น','ซีลกันน้ำมีปัญหา','ขนาดผิด','ลูกค้าขอเปลี่ยน','เสียหายระหว่างทำ','อื่นๆ'],'กรอบมีรอย')+
+      mSel('ความเร่งด่วน','im_priority',['ต่ำ','ปานกลาง','สูง','เร่งด่วน'],'ปานกลาง')+
+      mSel('รับผิดชอบโดย','im_staff',['ช่าง 1','ช่าง 2','ช่าง 3'],job.staff||'ช่าง 1')+
+      mInp('วันที่คาดว่าจะแก้ไข','im_reworkDate','','date')+
+    '</div>'+
+    '<label style="display:block;margin-bottom:16px;"><div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">รายละเอียดปัญหา</div>'+
+      '<textarea class="input-field" id="im_details" placeholder="อธิบายปัญหาที่พบ..."></textarea></label>'+
+    '<div style="display:flex;justify-content:flex-end;gap:10px;">'+
+      '<button class="btn-secondary" onclick="closeModal()">ยกเลิก</button>'+
+      '<button class="btn-primary" onclick="saveIssue('+jobId+')">บันทึกปัญหา</button>'+
+    '</div></div>';
+}
+function saveIssue(jobId){
+  const g=id=>document.getElementById(id)?.value||'';
+  const issue={type:g('im_type'),priority:g('im_priority'),staff:g('im_staff'),reworkDate:g('im_reworkDate'),details:g('im_details'),by:state.staffName,at:new Date().toLocaleString('th-TH')};
+  updateJob(jobId,{status:'พบปัญหา',issue});showToast('บันทึกปัญหาแล้ว');closeModal();renderDetail();
+}
+
+function closeModal(){const o=document.getElementById('modal-overlay');o.style.display='none';o.innerHTML='';}
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){document.getElementById('app').style.display='none';});
+</script>
+</body>
+</html>
